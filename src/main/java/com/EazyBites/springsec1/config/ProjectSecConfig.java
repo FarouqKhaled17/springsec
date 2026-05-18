@@ -6,14 +6,14 @@ import org.springframework.security.authentication.password.CompromisedPasswordC
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
+
+import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
@@ -24,23 +24,15 @@ public class ProjectSecConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests((requests)->requests
                 .requestMatchers("/account","/balance","/cards","/notices").authenticated()
-                .requestMatchers("/contact","/home","/error").permitAll());
+                .requestMatchers("/contact","/home","/error","register").permitAll());
                 http.formLogin(Customizer.withDefaults());
                 http.httpBasic(Customizer.withDefaults());
         return http.build();
     }
 
     @Bean
-    public UserDetailsService userDetailsService(){
-        UserDetails user= User.withUsername("john")
-                .password("{noop}Farouk@54321")
-                .authorities("read")
-                .build();
-        UserDetails admin= User.withUsername("admin")
-                .password("{bcrypt}$2a$12$Zaxvkf5VNvMTNygpxPScHeV1rlqCDaj8gDJSIW7zbvrFgv54fIgBW")
-                .authorities("ROLE_ADMIN")
-                .build();
-        return new InMemoryUserDetailsManager(user,admin);
+    public UserDetailsService userDetailsService(DataSource dataSource){
+        return new JdbcUserDetailsManager(dataSource);
     }
 
     @Bean
